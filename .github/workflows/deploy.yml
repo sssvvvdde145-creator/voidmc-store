@@ -1,0 +1,35 @@
+name: Deploy VOID MC
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Extract website
+        run: |
+          unzip -o VOID_MC_SHOP_AND_SEPARATE_ADMIN.zip -d extracted
+
+      - name: Install dependencies
+        working-directory: extracted/voidmc_cf
+        run: npm install
+
+      - name: Deploy Worker
+        working-directory: extracted/voidmc_cf
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
