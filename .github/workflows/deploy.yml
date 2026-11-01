@@ -23,9 +23,10 @@ jobs:
         run: |
           unzip -o VOID_MC_SHOP_AND_SEPARATE_ADMIN.zip -d extracted
 
-      - name: Set D1 Database ID
+      - name: Configure Worker
         run: |
           sed -i 's/PASTE_YOUR_D1_DATABASE_ID_HERE/fd346acc-2ef1-4104-8d1e-cf44ba8e3d8d/' extracted/voidmc_cf/wrangler.jsonc
+          sed -i 's/"compatibility_date":[[:space:]]*"[^"]*"/"compatibility_date": "2025-10-01"/' extracted/voidmc_cf/wrangler.jsonc
 
       - name: Install dependencies
         working-directory: extracted/voidmc_cf
