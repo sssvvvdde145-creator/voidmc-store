@@ -1,5 +1,5 @@
 
-name: Deploy VOID MC Store
+name: Deploy VOID MC Shop
 
 on:
   push:
@@ -11,9 +11,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ./VOID_MC_SHOP_AND_SEPARATE_ADMIN.zip
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
     steps:
       - name: Checkout Repository
@@ -22,25 +22,57 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
+
+      - name: Extract Shop ZIP
+        run: |
+          unzip -o VOID_MC_SHOP_AND_SEPARATE_ADMIN.zip -d extracted
 
       - name: Install Dependencies
+        working-directory: extracted/voidmc_cf
         run: npm install
 
-      - name: Check and Create R2 Bucket
+      - name: Create R2 Bucket if Missing
+        working-directory: extracted/voidmc_cf
         run: |
-          if npx wrangler r2 bucket list | grep -q "voidmc-media"; then
+          set -euo pipefail
+
+          if npx wrangler r2 bucket list | grep -Fq "voidmc-media"; then
             echo "R2 bucket already exists."
           else
+            echo "Creating R2 bucket..."
             npx wrangler r2 bucket create voidmc-media
           fi
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Deploy to Cloudflare
+      - name: Configure R2 Binding
+        working-directory: extracted/voidmc_cf
+        run: |
+          python3 - <<'PY'
+          import json
+
+          path = "wrangler.jsonc"
+
+          with open(path, "r") as f:
+              config = json.load(f)
+
+          buckets = config.setdefault("r2_buckets", [])
+
+          if not any(b.get("binding") == "MEDIA" for b in buckets):
+              buckets.append({
+                  "binding": "MEDIA",
+                  "bucket_name": "voidmc-media"
+              })
+
+          with open(path, "w") as f:
+              json.dump(config, f, indent=2)
+
+          print("R2 binding configured.")
+          PY
+
+      - name: Apply D1 Migrations
+        working-directory: extracted/voidmc_cf
+        run: npx wrangler d1 migrations apply void-mc-store-db --remote
+
+      - name: Deploy VOID MC Shop
+        working-directory: extracted/voidmc_cf
         run: npx wrangler deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          
