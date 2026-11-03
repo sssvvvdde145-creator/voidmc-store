@@ -1,5 +1,5 @@
 
-name: Deploy VOID MC Shop
+name: Deploy VOID MC SHOP
 
 on:
   push:
