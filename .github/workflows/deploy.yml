@@ -13,7 +13,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./voidmc_cf
+        working-directory: ./VOID_MC_SHOP_AND_SEPARATE_ADMIN.zip
 
     steps:
       - name: Checkout Repository
