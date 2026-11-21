@@ -29,11 +29,11 @@ jobs:
           unzip -o xgencloud-shop.zip -d extracted
 
       - name: Install Dependencies
-        working-directory: extracted/voidmc_cf
+        working-directory: extracted/xgencloud_cf
         run: npm install
 
       - name: Create R2 Bucket if Missing
-        working-directory: extracted/voidmc_cf
+        working-directory: extracted/xgencloud_cf
         run: |
           set -euo pipefail
 
@@ -45,7 +45,7 @@ jobs:
           fi
 
       - name: Configure R2 Binding
-        working-directory: extracted/voidmc_cf
+        working-directory: extracted/xgencloud_cf
         run: |
           python3 - <<'PY'
           import json
@@ -70,9 +70,9 @@ jobs:
           PY
 
       - name: Apply D1 Migrations
-        working-directory: extracted/voidmc_cf
+        working-directory: extracted/xgencloud_cf
         run: npx wrangler d1 migrations apply void-mc-store-db --remote
 
       - name: Deploy VOID MC Shop
-        working-directory: extracted/voidmc_cf
+        working-directory: extracted/xgencloud_cf
         run: npx wrangler deploy
